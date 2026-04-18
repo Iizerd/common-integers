@@ -3,7 +3,7 @@
 
 from pathlib import Path
 
-SOURCES = ("generated.txt", "blare_extract.txt")
+SOURCES = ("generated.txt", "blare_extract.txt", "blare_extract_drivers.txt", "blare_extract_dlls.txt")
 OUTPUT = "integers.txt"
 
 

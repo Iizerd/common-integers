@@ -82,13 +82,27 @@ def int_to_u32(n: int) -> int:
     return n & 0xFFFFFFFF
 
 
+def zx_to_u64(n: int, bits: int) -> int:
+    """Zero-extend a value truncated to `bits` into u64 space."""
+    return n & ((1 << bits) - 1)
+
+
+def sx_to_u64(n: int, bits: int) -> int:
+    """Sign-extend a value truncated to `bits` into u64 space."""
+    mask = (1 << bits) - 1
+    val = n & mask
+    sign_bit = 1 << (bits - 1)
+    if val & sign_bit:
+        val |= (~mask) & 0xFFFFFFFFFFFFFFFF
+    return val & 0xFFFFFFFFFFFFFFFF
+
 def format_hex(val: int) -> str:
     """Format an unsigned 32-bit value as an unpadded uppercase hex string (no 0x)."""
     return f"{val:X}"
 
 
 def main():
-    output_path = "integers.txt"
+    output_path = "generated.txt"
 
     all_values: Set[int] = set()
 
@@ -113,8 +127,18 @@ def main():
     # ------------------------------------------------------------------
     print("Generating integer range [-65536 .. 65536] ...")
     range_values: Set[int] = set()
+
+    # Keep the original i32/u32 coverage for the full symmetric range.
     for i in range(-65536, 65536 + 1):
         range_values.add(int_to_u32(i))
+
+    # Rust-style cast chain from negative values:
+    #   (-i as i{8,16,32} as u64) and (-i as i64 as u64)
+    for i in range(-65536, 65536 + 1):
+        for bits in (8, 16, 32):
+            range_values.add(zx_to_u64(i, bits))
+            range_values.add(sx_to_u64(i, bits))
+        range_values.add(i & 0xFFFFFFFFFFFFFFFF)
 
     all_values.update(range_values)
     print(f"  Added {len(range_values):,} values from integer range")
